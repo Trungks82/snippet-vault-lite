@@ -9,6 +9,9 @@ export class SnippetsController {
 
   @Post()
   create(@Body() createSnippetDto: CreateSnippetDto) {
+    // 🚨 Add this console.log so we can see the data arriving!
+    console.log('🚨 PR-Brain intercepted new code:', createSnippetDto);
+    
     return this.snippetsService.create(createSnippetDto);
   }
 
