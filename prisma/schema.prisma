@@ -1,28 +1,36 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "sqlite"
-  // 🚨 No URL line here anymore!
+  url      = "file:./dev.db"
 }
 
-// 📦 Our Snippet shelf blueprint
-model Snippet {
-  id        Int      @id @default(autoincrement()) 
-  title     String
-  code      String
-  author    String
-  language  String?  
-  status    String   @default("pending_ai_review") 
-  createdAt DateTime @default(now())               
-  updatedAt DateTime @updatedAt                    
-}
-
-// 🧑‍💻 NEW: Our Guest Registry!
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique  // No two engineers can have the same email
-  password  String            // This will hold the shredded (hashed) password
-  createdAt DateTime @default(now())
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  createdAt DateTime  @default(now())
+  
+  // 👇 Tells the database: "One user can have many snippets"
+  snippets  Snippet[] 
+}
+
+// 👇 NEW: The Snippet Shelf
+model Snippet {
+  id              Int      @id @default(autoincrement())
+  content         String   // The raw code the user pastes in
+  
+  // --- AI Generated Metadata ---
+  summary         String   // The 1-sentence explanation
+  tags            String   // Storing the JSON array of tags as a string
+  vulnerabilities String   // Security warnings
+  
+  // --- The Owner ---
+  userId          Int      // Who owns this snippet?
+  user            User     @relation(fields: [userId], references: [id])
+  
+  createdAt       DateTime @default(now())
 }
