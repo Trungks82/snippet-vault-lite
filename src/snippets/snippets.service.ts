@@ -2,22 +2,35 @@ import { Injectable } from '@nestjs/common';
 import { CreateSnippetDto } from './dto/create-snippet.dto';
 import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { AiService } from '../ai/ai.service'; // 👈 1. Import the AI Brain
 
 @Injectable()
 export class SnippetsService {
   private prisma: PrismaClient;
 
-  constructor() {
-    // 1. We create the specific SQLite Adapter and hand it the database address
+  // 👈 2. Inject the AiService just like you would in an Angular Component
+  constructor(private aiService: AiService) {
     const adapter = new PrismaBetterSqlite3({ url: "file:./dev.db" });
-    
-    // 2. We hire Prisma and give it the Adapter so it knows exactly how to talk to SQLite
     this.prisma = new PrismaClient({ adapter });
   }
 
-  create(createSnippetDto: CreateSnippetDto) {
+  // 👇 3. The AI Orchestration Pipeline
+  async create(createSnippetDto: CreateSnippetDto) {
+    // A. Hand the raw code to Google Gemini and wait for the JSON response
+    const aiMetadata = await this.aiService.analyzeSnippet(createSnippetDto.code);
+
+    // B. Save the user's data PLUS the AI's metadata to the database
     return this.prisma.snippet.create({
-      data: createSnippetDto, 
+      data: {
+        title: createSnippetDto.title,
+        code: createSnippetDto.code,
+        author: createSnippetDto.author,
+        
+        // Map the AI-generated fields:
+        summary: aiMetadata.summary,
+        tags: JSON.stringify(aiMetadata.tags), // Convert array to string for SQLite
+        vulnerabilities: aiMetadata.vulnerabilities,
+      },
     });
   }
 

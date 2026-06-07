@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  // Notice: The url line is completely removed here for Prisma 7 compatibility!
 }
 
 model User {
@@ -13,24 +13,29 @@ model User {
   email     String    @unique
   password  String
   createdAt DateTime  @default(now())
-  
-  // 👇 Tells the database: "One user can have many snippets"
-  snippets  Snippet[] 
+
+  // Tells the database: "One user can have many snippets"
+  snippets  Snippet[]
 }
 
-// 👇 NEW: The Snippet Shelf
+// The Unified Snippet Shelf
 model Snippet {
   id              Int      @id @default(autoincrement())
-  content         String   // The raw code the user pastes in
   
-  // --- AI Generated Metadata ---
-  summary         String   // The 1-sentence explanation
-  tags            String   // Storing the JSON array of tags as a string
-  vulnerabilities String   // Security warnings
-  
-  // --- The Owner ---
-  userId          Int      // Who owns this snippet?
-  user            User     @relation(fields: [userId], references: [id])
-  
+  // Data from your NestJS DTO
+  title           String
+  code            String
+  author          String
+
+  // AI Generated Metadata (Optional with '?' for backwards compatibility)
+  summary         String?  
+  tags            String?  
+  vulnerabilities String?  
+
+  // The Owner (Optional with '?' so it doesn't break your current Postman test)
+  userId          Int?      
+  user            User?    @relation(fields: [userId], references: [id])
+
   createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
