@@ -15,21 +15,20 @@ export class SnippetsService {
   }
 
   // 👇 3. The AI Orchestration Pipeline
-  async create(createSnippetDto: CreateSnippetDto) {
-    // A. Hand the raw code to Google Gemini and wait for the JSON response
+  // Add userId as the second parameter here 👇
+  async create(createSnippetDto: CreateSnippetDto, userId: number) { 
     const aiMetadata = await this.aiService.analyzeSnippet(createSnippetDto.code);
 
-    // B. Save the user's data PLUS the AI's metadata to the database
     return this.prisma.snippet.create({
       data: {
         title: createSnippetDto.title,
         code: createSnippetDto.code,
         author: createSnippetDto.author,
-        
-        // Map the AI-generated fields:
         summary: aiMetadata.summary,
-        tags: JSON.stringify(aiMetadata.tags), // Convert array to string for SQLite
+        tags: JSON.stringify(aiMetadata.tags), 
         vulnerabilities: aiMetadata.vulnerabilities,
+        
+        userId: userId, // 👈 Bind the User ID to the Snippet!
       },
     });
   }

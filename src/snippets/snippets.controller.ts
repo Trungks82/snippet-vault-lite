@@ -1,18 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { SnippetsService } from './snippets.service';
 import { CreateSnippetDto } from './dto/create-snippet.dto';
 import { UpdateSnippetDto } from './dto/update-snippet.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard'; // 👈 1. Import the security guard
 
 @Controller('snippets')
 export class SnippetsController {
   constructor(private readonly snippetsService: SnippetsService) {}
 
+  @UseGuards(JwtAuthGuard) // 👈 2. Lock the door! Require a valid JWT token.
   @Post()
-  create(@Body() createSnippetDto: CreateSnippetDto) {
-
+  create(@Body() createSnippetDto: CreateSnippetDto, @Req() req: any) { // 👈 3. Intercept the Request
     console.log('🚨 PR-Brain intercepted new code:', createSnippetDto);
     
-    return this.snippetsService.create(createSnippetDto);
+    // 👇 4. Grab the User ID (sub) from the verified JWT payload
+    const userId = req.user.sub; 
+    
+    // 👇 5. Pass both the code AND the user ID down to the service
+    return this.snippetsService.create(createSnippetDto, userId);
   }
 
   @Get()
