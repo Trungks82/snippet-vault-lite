@@ -1,22 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateSnippetDto } from './dto/create-snippet.dto';
+import { UpdateSnippetDto } from './dto/update-snippet.dto';
 import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
-import { AiService } from '../ai/ai.service'; // 👈 1. Import the AI Brain
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class SnippetsService {
   private prisma: PrismaClient;
 
-  // 👈 2. Inject the AiService just like you would in an Angular Component
   constructor(private aiService: AiService) {
-    const adapter = new PrismaBetterSqlite3({ url: "file:./dev.db" });
+    const adapter = new PrismaBetterSqlite3({ url: 'file:./dev.db' });
     this.prisma = new PrismaClient({ adapter });
   }
 
-  // 👇 3. The AI Orchestration Pipeline
-  // Add userId as the second parameter here 👇
-  async create(createSnippetDto: CreateSnippetDto, userId: number) { 
+  async create(createSnippetDto: CreateSnippetDto, userId: number) {
     const aiMetadata = await this.aiService.analyzeSnippet(createSnippetDto.code);
 
     return this.prisma.snippet.create({
@@ -25,34 +23,38 @@ export class SnippetsService {
         code: createSnippetDto.code,
         author: createSnippetDto.author,
         summary: aiMetadata.summary,
-        tags: JSON.stringify(aiMetadata.tags), 
+        tags: JSON.stringify(aiMetadata.tags),
         vulnerabilities: aiMetadata.vulnerabilities,
-        
-        userId: userId, // 👈 Bind the User ID to the Snippet!
+        userId,
       },
     });
   }
 
-  findAll() {
-    return this.prisma.snippet.findMany();
+  findAll(userId: number) {
+    return this.prisma.snippet.findMany({ where: { userId } });
   }
 
-  findOne(id: number) {
-    return this.prisma.snippet.findUnique({
-      where: { id: id }
-    });
+  async findOne(id: number, userId: number) {
+    return this.findOwnedOrThrow(id, userId);
   }
 
-  update(id: number, updateData: any) {
-    return this.prisma.snippet.update({
-      where: { id: id },
-      data: updateData,
-    });
+  async update(id: number, updateData: UpdateSnippetDto, userId: number) {
+    await this.findOwnedOrThrow(id, userId);
+    return this.prisma.snippet.update({ where: { id }, data: updateData });
   }
 
-  remove(id: number) {
-    return this.prisma.snippet.delete({
-      where: { id: id }
+  async remove(id: number, userId: number) {
+    await this.findOwnedOrThrow(id, userId);
+    return this.prisma.snippet.delete({ where: { id } });
+  }
+
+  // Only returns the row if it belongs to this user; otherwise 404.
+  // Prevents one user reading/editing/deleting another user's snippet by id.
+  private async findOwnedOrThrow(id: number, userId: number) {
+    const snippet = await this.prisma.snippet.findFirst({
+      where: { id, userId },
     });
+    if (!snippet) throw new NotFoundException('Snippet not found');
+    return snippet;
   }
 }
