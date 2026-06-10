@@ -21,7 +21,12 @@ export class SnippetsController {
 
   @Post()
   create(@Body() createSnippetDto: CreateSnippetDto, @Req() req: any) {
-    return this.snippetsService.create(createSnippetDto, req.user.sub);
+    // author comes from the verified token, never from the request body
+    return this.snippetsService.create(
+      createSnippetDto,
+      req.user.sub,
+      req.user.email,
+    );
   }
 
   @Get()

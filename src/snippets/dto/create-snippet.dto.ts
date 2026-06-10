@@ -10,10 +10,6 @@ export class CreateSnippetDto {
   code!: string;
 
   @IsString()
-  @IsNotEmpty()
-  author!: string;
-  
-  @IsString()
   @IsOptional() 
   language?: string;
 }

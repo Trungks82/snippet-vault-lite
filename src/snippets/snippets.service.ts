@@ -11,14 +11,18 @@ export class SnippetsService {
     private aiService: AiService,
   ) {}
 
-  async create(createSnippetDto: CreateSnippetDto, userId: number) {
+  async create(
+    createSnippetDto: CreateSnippetDto,
+    userId: number,
+    authorEmail: string,
+  ) {
     const aiMetadata = await this.aiService.analyzeSnippet(createSnippetDto.code);
 
     return this.prisma.snippet.create({
       data: {
         title: createSnippetDto.title,
         code: createSnippetDto.code,
-        author: createSnippetDto.author,
+        author: authorEmail,
         summary: aiMetadata.summary,
         tags: JSON.stringify(aiMetadata.tags),
         vulnerabilities: aiMetadata.vulnerabilities,
