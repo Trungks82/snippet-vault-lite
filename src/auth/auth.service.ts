@@ -1,19 +1,15 @@
 import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AuthDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
-  private prisma: PrismaClient;
-
-  // 👇 Notice we handed the worker the jwtService machine here!
-  constructor(private jwtService: JwtService) {
-    const adapter = new PrismaBetterSqlite3({ url: "file:./dev.db" });
-    this.prisma = new PrismaClient({ adapter });
-  }
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
 
   async register(authDto: AuthDto) {
     const existingUser = await this.prisma.user.findUnique({ where: { email: authDto.email } });

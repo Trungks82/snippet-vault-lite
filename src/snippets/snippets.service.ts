@@ -1,18 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateSnippetDto } from './dto/create-snippet.dto';
 import { UpdateSnippetDto } from './dto/update-snippet.dto';
-import { PrismaClient } from '@prisma/client';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class SnippetsService {
-  private prisma: PrismaClient;
-
-  constructor(private aiService: AiService) {
-    const adapter = new PrismaBetterSqlite3({ url: 'file:./dev.db' });
-    this.prisma = new PrismaClient({ adapter });
-  }
+  constructor(
+    private prisma: PrismaService,
+    private aiService: AiService,
+  ) {}
 
   async create(createSnippetDto: CreateSnippetDto, userId: number) {
     const aiMetadata = await this.aiService.analyzeSnippet(createSnippetDto.code);
