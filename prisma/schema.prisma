@@ -21,19 +21,20 @@ model User {
 // The Unified Snippet Shelf
 model Snippet {
   id              Int      @id @default(autoincrement())
-  
+
   // Data from your NestJS DTO
   title           String
   code            String
   author          String
 
   // AI Generated Metadata (Optional with '?' for backwards compatibility)
-  summary         String?  
-  tags            String?  
-  vulnerabilities String?  
+  summary         String?
+  tags            String?
+  vulnerabilities String?
+  analysisStatus  String   @default("PENDING")
 
   // The Owner (Optional with '?' so it doesn't break your current Postman test)
-  userId          Int?      
+  userId          Int?
   user            User?    @relation(fields: [userId], references: [id])
 
   createdAt       DateTime @default(now())
