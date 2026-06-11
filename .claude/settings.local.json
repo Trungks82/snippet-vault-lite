@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /mnt/d/snippet-vault-lite)",
+      "Bash(rsync -a --info=progress2 --exclude=node_modules --exclude=dist /home/testusername/code/snippet-vault-lite/ /mnt/d/snippet-vault-lite/)"
+    ]
+  }
+}
