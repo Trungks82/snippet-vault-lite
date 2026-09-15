@@ -1,105 +1,127 @@
-# Developer Snippet Network (Snippet Vault)
+# Acme Support AI
 
-A modern, production-grade enterprise platform designed to autonomously capture, validate, and securely organize high-value reusable code snippets directly from engineering workflows.
+Portfolio demo for **Trungks82**: a polished customer-support chatbot SaaS built with **Next.js App Router**, **TypeScript**, and **Tailwind CSS**. It answers questions with **RAG over local markdown** and always shows **citations**. Demo mode works **without any API keys**.
 
-Instead of letting highly optimized solutions get buried deep inside historical pull requests, this platform serves as an automated, AI-driven knowledge ecosystem that prevents developers from reinventing the wheel.
-
----
-
-## 🏗️ The Architecture Vision
-
-The platform is designed using a decoupled, multi-tier architecture to maximize developer velocity, security, and algorithmic scalability:
-
-* **The Ingestion Interface (Frontend):** A streamlined dashboard built with robust state management to monitor development metrics and flag high-value code blocks.
-* **The Core REST Engine (Backend):** A strictly typed, enterprise-patterned NestJS API utilizing dependency injection and controller-service decoupling to safely pipeline incoming data.
-* **The Database Warehouse:** A performance-optimized SQLite instance driven by Prisma 7 and a custom native driver adapter for sub-millisecond persistence.
-* **The AI Synthesis Layer:** An autonomous processing layer leveraging large language models (LLMs) via the Google Gemini API (`gemini-1.5-flash`) to execute structured code reviews, programmatic meta-tagging, and automated vulnerability scanning.
+> This branch replaces an earlier NestJS learning tree with a client-facing Next.js portfolio piece.
 
 ---
 
-## 🛠️ Tech Stack
+## Problem
 
-* **Framework:** NestJS (Node.js v22)
-* **Language:** TypeScript (Strict Mode)
-* **Database ORM:** Prisma 7 (with modern driver adapters)
-* **Database Engine:** SQLite (`better-sqlite3`)
-* **AI Integration:** Google Generative AI Core (`@google/generative-ai`)
-* **Security & Validation:** `class-validator`, `bcrypt`, JSON Web Tokens (JWT)
+Support teams spend hours answering the same questions about pricing, refunds, and product basics. Generic chatbots invent policies; ticket queues create wait times. Buyers want a demo that shows **grounded** answers — retrieved from *their* docs — with sources they can audit.
+
+**Acme Support AI** is that walkthrough: ask about plans or the 14-day refund window, watch retrieval + citations, optionally turn on OpenAI for nicer phrasing.
 
 ---
 
-## 📁 System Module Map
+## Stack
 
-The core engine segregates business domains into isolated modules to ensure clean decoupling and testing boundaries:
+| Layer | Choice |
+|-------|--------|
+| Framework | Next.js (App Router) + React |
+| Language | TypeScript |
+| Styling | Tailwind CSS v4 |
+| Knowledge | Markdown in `content/knowledge/` |
+| Retrieval | Embedding-free token overlap / TF-style scoring |
+| LLM | Optional OpenAI (`gpt-4o-mini`) when `OPENAI_API_KEY` is set |
 
-```text
-src/
-├── app.module.ts       # Central framework orchestrator
-├── prisma/             # Direct database connection abstraction
-├── auth/               # Access control and stateless JWT verification
-├── ai/                 # Background worker layer interfacing with Gemini
-└── snippet/            # Code ingestion pipeline and metadata database mapping
+---
+
+## Architecture
+
+```
+Browser (/chat)
+    │  POST { message }
+    ▼
+Route handler  POST /api/chat
+    │
+    ├──► load + chunk content/knowledge/*.md
+    ├──► score chunks vs query (token overlap + bigram bonus)
+    ├──► top-K citations
+    │
+    ├──► if OPENAI_API_KEY → chat completions with context
+    └──► else → deterministic demo answer from chunks
+    │
+    ▼
+JSON { answer, citations, mode: "demo" | "openai" }
 ```
 
----
+**Key routes**
 
-## 🗺️ Development Roadmap
-
-### Project 1: Core Engine & Secure Pipeline
-- [x] Set up modular NestJS application structure.
-- [x] Implement strict request validation using Data Transfer Objects (DTOs).
-- [x] Connect Prisma 7 database engine with localized SQLite warehouse.
-- [x] Build secure, cryptographic User Registration & Authentication (JWT).
-
-### Project 2: AI Orchestration & Metadata Synthesis
-- [x] Integrate AI Agent communication pathways via LLM APIs (Gemini 1.5 Flash).
-- [x] Build background processing services to pipe incoming code for analysis.
-- [x] Implement automated code-quality assessment and programmatic JSON parsing/tagging.
-
-### Project 3: Visual Interface & Integration
-- [ ] Develop the unified dashboard UI for tracking code repositories.
-- [ ] Establish secure state-management patterns for handling authenticated user sessions.
+| Route | Purpose |
+|-------|---------|
+| `/` | Landing — product story, features, architecture |
+| `/chat` | Chat UI with suggestions, simulated streaming, citation cards |
+| `/docs` | Browse the sample knowledge base |
+| `POST /api/chat` | RAG retrieve → answer (demo or OpenAI) |
 
 ---
 
-## 🔧 Local Setup & Environment Vault
-
-Clone the repository and install dependencies:
+## Setup
 
 ```bash
 npm install
+cp .env.example .env.local   # optional: add OPENAI_API_KEY
+npm run dev
 ```
 
-Create a `.env` file at the root of the project to act as your secure local credentials vault:
-
-```dotenv
-DATABASE_URL="file:./dev.db"
-JWT_SECRET="your-super-cryptographic-secret-key"
-GEMINI_API_KEY="AIzaSyYourSecretKeyFromGoogleAIStudio"
-```
-
-Initialize and sync your local SQLite warehouse schema using Prisma:
+Open [http://localhost:3000](http://localhost:3000).
 
 ```bash
-npx prisma migrate dev --name init_system
-```
-
-Boot up the local engine in development watch mode:
-
-```bash
-npm run start:dev
+npm run build && npm start   # production check
 ```
 
 ---
 
-## 🔮 Future Architecture Target: "Bring Your Own AI"
+## How to demo for clients
 
-To prevent tight coupling with a single upstream LLM provider, the AI layer is designed for a near-future refactor utilizing the Strategy Pattern via NestJS Custom Providers.
+1. Open **Home** — explain the Tier-1 deflection story in 30 seconds.
+2. Open **Knowledge Base** — show FAQ / Pricing / Refunds as “your policy pack.”
+3. Open **Chat** — click a suggestion or ask:
+   - “What does the Growth plan cost?”
+   - “Can I get a refund after 10 days?”
+   - “Do I need an API key?”
+4. Expand **Citations** — point at filenames and excerpts. Emphasize: no key required for this flow.
+5. (Optional) Add `OPENAI_API_KEY` to `.env.local`, restart, ask again — badge flips to **OpenAI**, same citations.
 
-This abstraction will allow individual departments or repositories to seamlessly switch runtime engines (e.g., lightweight validation handled via Gemini, deep logical architecture validation routed dynamically to OpenAI or Claude) without altering core application controllers.
+---
 
-```typescript
-export interface AiProvider {
-  analyzeSnippet(codeSnippet: string, customRules?: string): Promise<SnippetMetadata>;
-}
+## Sample knowledge
+
+| File | Topics |
+|------|--------|
+| `content/knowledge/faq.md` | Product overview, KB behavior, API keys, accuracy |
+| `content/knowledge/pricing.md` | Starter / Growth / Scale, trials, add-ons |
+| `content/knowledge/refunds.md` | 14-day guarantee, cancellations, chargebacks |
+
+Edit or add `.md` files, restart the server, and retrieval picks them up.
+
+---
+
+## Extending for a real client
+
+- **Ingest**: Notion / Confluence / Zendesk Help Center → chunking pipeline + incremental re-index.
+- **Embeddings**: swap token overlap for OpenAI/Voyage embeddings + pgvector or a hosted vector store.
+- **Auth & tenancy**: Clerk/Auth.js, per-workspace document isolation, role-based admin upload.
+- **Handoff**: escalate low-confidence answers to Intercom/Zendesk with transcript + citations.
+- **Eval**: golden-question set, citation precision/recall, hallucination checks before go-live.
+- **Observability**: Langfuse/Helicone, rate limits, PII redaction.
+- **UI**: white-label theme, embeddable widget, multi-language.
+
+---
+
+## Project layout
+
 ```
+content/knowledge/     # RAG source docs
+src/app/               # App Router pages + API
+src/components/        # Nav, ChatPanel
+src/lib/               # knowledge retrieval, answer generation, types
+.env.example           # OPENAI_API_KEY=
+```
+
+---
+
+## License
+
+MIT — portfolio / demo use. Replace Acme branding before shipping to a customer.
